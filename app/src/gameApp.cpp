@@ -165,3 +165,123 @@ void GameApp::chooseMenuItem(int itemIndex) {
     break;
   }
 }
+
+void GameApp::updateSizeSetup() {
+  const int fieldStep = pollMenuStep();
+  if (fieldStep != 0) {
+    sizeFieldIndex = (sizeFieldIndex + fieldStep + 2) % 2;
+  }
+
+  std::string &activeText =
+      sizeFieldIndex == 0 ? typedRowText : typedColumnText;
+
+  if (IsKeyPressed(KEY_LEFT)) {
+    changeSideText(activeText, -1);
+  }
+  if (IsKeyPressed(KEY_RIGHT)) {
+    changeSideText(activeText, 1);
+  }
+
+  editTypedText(activeText, 2, true); // a side never has more than two digits
+
+  if (pollCancel()) {
+    activeScreen = Screen::mainMenu;
+    return;
+  }
+
+  if (!pollConfirm()) {
+    return;
+  }
+
+  const std::optional<int> chosenRows = parseNumber(typedRowText);
+  const std::optional<int> chosenColumns = parseNumber(typedColumnText);
+
+  if (!chosenRows.has_value() || !chosenColumns.has_value()) {
+    showMessage("please type a number into both fields");
+    return;
+  }
+  if (!isValidMazeSide(*chosenRows) || !isValidMazeSide(*chosenColumns)) {
+    showMessage("the sides have to be between 10 and 50");
+    return;
+  }
+
+  settings.rowCount = *chosenRows;
+  settings.columnCount = *chosenColumns;
+  startNewGame();
+}
+
+void GameApp::updateNameSetup() {
+  editTypedText(typedName, maxPlayerNameLength, false);
+
+  if (pollCancel()) {
+    activeScreen = Screen::mainMenu;
+    return;
+  }
+
+  if (!pollConfirm()) {
+    return;
+  }
+
+  const std::string chosenName = cleanPlayerName(typedName);
+  settings.playerName = chosenName;
+  typedName = chosenName;
+
+  showMessage(saveSettings(settings) ? "name saved as " + chosenName
+                                     : "the name could not be saved");
+  activeScreen = Screen::mainMenu;
+}
+
+void GameApp::updatePlaying(float deltaSeconds) {
+  if (!session.isRunning()) {
+    activeScreen = Screen::mainMenu;
+    return;
+  }
+
+  session.addElapsedTime(static_cast<double>(deltaSeconds));
+
+  const MazeLayout layout = calculateMazeLayout(session.maze(), mazeViewport());
+  cellUnderMouse = cellAtPoint(GetMousePosition(), session.maze(), layout);
+
+  const std::optional<Direction> chosenDirection = readMoveDirection();
+  if (chosenDirection.has_value()) {
+    applyMoveOutcome(session.movePlayer(*chosenDirection));
+  }
+
+  // The last step may have won the game, and then this screen is over.
+  if (activeScreen != Screen::playing) {
+    return;
+  }
+
+  if (IsKeyPressed(KEY_H)) {
+    settings.showHintPath = !settings.showHintPath;
+    showMessage(settings.showHintPath ? "hint is on" : "hint is off");
+  }
+  if (IsKeyPressed(KEY_TAB)) {
+    numbersVisible = !numbersVisible;
+  }
+  if (IsKeyPressed(KEY_F2)) {
+    saveCurrentGame();
+  }
+  if (IsKeyPressed(KEY_F5)) {
+    startNewGame();
+    showMessage("a new maze was built");
+  }
+
+  if (pollCancel()) {
+    saveCurrentGame();
+    activeScreen = Screen::mainMenu;
+  }
+}
+
+void GameApp::updateWonScreen() {
+  if (pollConfirm() || pollCancel()) {
+    session.clearGame();
+    activeScreen = Screen::mainMenu;
+  }
+}
+
+void GameApp::updateInfoScreen() {
+  if (pollCancel() || pollConfirm()) {
+    activeScreen = Screen::mainMenu;
+  }
+}
