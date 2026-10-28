@@ -94,3 +94,74 @@ void GameApp::run() {
 
   CloseWindow();
 }
+
+void GameApp::updateActiveScreen(float deltaSeconds) {
+  switch (activeScreen) {
+  case Screen::mainMenu:
+    updateMainMenu();
+    break;
+  case Screen::sizeSetup:
+    updateSizeSetup();
+    break;
+  case Screen::nameSetup:
+    updateNameSetup();
+    break;
+  case Screen::playing:
+    updatePlaying(deltaSeconds);
+    break;
+  case Screen::won:
+    updateWonScreen();
+    break;
+  case Screen::scoreBoard:
+  case Screen::help:
+    updateInfoScreen();
+    break;
+  }
+}
+
+void GameApp::updateMainMenu() {
+  const int menuStep = pollMenuStep();
+  if (menuStep != 0) {
+    const int itemCount = static_cast<int>(menuItems.size());
+    menuIndex = (menuIndex + menuStep + itemCount) % itemCount;
+  }
+
+  if (pollConfirm()) {
+    chooseMenuItem(menuIndex);
+  }
+}
+
+void GameApp::chooseMenuItem(int itemIndex) {
+  switch (static_cast<MenuItem>(itemIndex)) {
+  case MenuItem::newGame:
+    typedRowText = std::to_string(settings.rowCount);
+    typedColumnText = std::to_string(settings.columnCount);
+    sizeFieldIndex = 0;
+    statusMessage.clear();
+    activeScreen = Screen::sizeSetup;
+    break;
+
+  case MenuItem::continueGame:
+    continueSavedGame();
+    break;
+
+  case MenuItem::scoreBoard:
+    scoreEntries = loadScoreBoard();
+    activeScreen = Screen::scoreBoard;
+    break;
+
+  case MenuItem::help:
+    activeScreen = Screen::help;
+    break;
+
+  case MenuItem::playerName:
+    typedName = settings.playerName;
+    statusMessage.clear();
+    activeScreen = Screen::nameSetup;
+    break;
+
+  case MenuItem::quit:
+    quitRequested = true;
+    break;
+  }
+}
