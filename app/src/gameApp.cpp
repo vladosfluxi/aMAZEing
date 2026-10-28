@@ -24,3 +24,26 @@ enum class MenuItem {
   playerName = 4,
   quit = 5
 };
+
+static std::optional<int> parseNumber(const std::string &text) {
+  if (text.empty()) {
+    return std::nullopt;
+  }
+
+  int value = 0;
+  const char *firstCharacter = text.data();
+  const char *lastCharacter = text.data() + text.size();
+  const std::from_chars_result result =
+      std::from_chars(firstCharacter, lastCharacter, value);
+
+  if (result.ec != std::errc{} || result.ptr != lastCharacter) {
+    return std::nullopt;
+  }
+  return value;
+}
+
+static void changeSideText(std::string &text, int step) {
+  const std::optional<int> currentValue = parseNumber(text);
+  text =
+      std::to_string(clampMazeSide(currentValue.value_or(minMazeSide) + step));
+}
