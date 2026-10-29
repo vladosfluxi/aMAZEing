@@ -363,3 +363,32 @@ void GameApp::finishRun() {
 
   activeScreen = Screen::won;
 }
+
+void GameApp::applyMoveOutcome(MoveOutcome outcome) {
+  switch (outcome) {
+  case MoveOutcome::moved:
+    break;
+  case MoveOutcome::unlockedDoor:
+    showMessage("a key opened the door");
+    break;
+  case MoveOutcome::reachedExit:
+    finishRun();
+    break;
+  case MoveOutcome::blockedByWall:
+    showMessage("a wall is in the way");
+    break;
+  case MoveOutcome::blockedByDoor:
+    showMessage("this door is locked, find a key first");
+    break;
+  case MoveOutcome::outsideMaze:
+    showMessage("that is the border of the maze");
+    break;
+  case MoveOutcome::noActiveGame:
+    break;
+  }
+}
+
+void GameApp::showMessage(std::string text) {
+  statusMessage = std::move(text);
+  statusMessageTimer = messageSeconds;
+}
