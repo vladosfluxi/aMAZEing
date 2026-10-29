@@ -276,6 +276,7 @@ void GameApp::updatePlaying(float deltaSeconds) {
 void GameApp::updateWonScreen() {
   if (pollConfirm() || pollCancel()) {
     session.clearGame();
+
     activeScreen = Screen::mainMenu;
   }
 }
@@ -284,4 +285,53 @@ void GameApp::updateInfoScreen() {
   if (pollCancel() || pollConfirm()) {
     activeScreen = Screen::mainMenu;
   }
+}
+void GameApp::startNewGame() {
+  session.startGame(
+      generateMaze(settings.rowCount, settings.columnCount, makeRandomSeed()));
+  cellUnderMouse.reset();
+
+  if (!saveSettings(settings)) {
+    TraceLog(LOG_WARNING, "the settings could not be written");
+  }
+
+  activeScreen = Screen::playing;
+}
+
+void GameApp::continueSavedGame() {
+  std::optional<SavedGame> savedGame = loadGame();
+  if (!savedGame.has_value()) {
+    showMessage("there is no saved game to continue");
+    return;
+  }
+
+  settings.playerName = savedGame->playerName;
+  typedName = savedGame->playerName;
+
+  session.restoreGame(std::move(savedGame->maze), savedGame->playerPosition,
+                      savedGame->statistics);
+  cellUnderMouse.reset();
+
+  if (!session.isRunning()) {
+    showMessage("the saved game was already finished");
+    return;
+  }
+
+  showMessage("saved game loaded");
+  activeScreen = Screen::playing;
+}
+
+void GameApp::saveCurrentGame() {
+  if (!session.isRunning()) {
+    return;
+  }
+
+  SavedGame savedGame;
+  savedGame.playerName = settings.playerName;
+  savedGame.maze = session.maze();
+  savedGame.playerPosition = session.playerPosition();
+  savedGame.statistics = session.statistics();
+
+  showMessage(saveGame(savedGame) ? "game saved"
+                                  : "the game could not be saved");
 }
