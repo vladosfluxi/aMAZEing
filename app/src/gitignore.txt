@@ -1,0 +1,13 @@
+# build folders
+build/
+out/
+cmake-build-*/
+
+# files of the editors
+.vs/
+.vscode/
+.idea/
+*.user
+
+# results of a local run
+*.json.bak
