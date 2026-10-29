@@ -335,3 +335,31 @@ void GameApp::saveCurrentGame() {
   showMessage(saveGame(savedGame) ? "game saved"
                                   : "the game could not be saved");
 }
+void GameApp::finishRun() {
+  lastScore = session.currentScore();
+
+  ScoreEntry entry;
+  entry.playerName = settings.playerName;
+  entry.rowCount = session.maze().rowCount();
+  entry.columnCount = session.maze().columnCount();
+  entry.stepCount = session.statistics().stepCount;
+  entry.keysUsed = session.statistics().keysUsed;
+  entry.score = lastScore;
+  entry.elapsedSeconds = session.statistics().elapsedSeconds;
+  entry.playedAt = currentTimeText();
+
+  scoreEntries = loadScoreBoard();
+  addScoreEntry(scoreEntries, entry);
+  if (!saveScoreBoard(scoreEntries)) {
+    TraceLog(LOG_WARNING, "the score board could not be written");
+  }
+
+  lastPlace = placeOfScore(scoreEntries, lastScore);
+
+  // A finished run cannot be continued.
+  if (hasSavedGame() && !removeSavedGame()) {
+    TraceLog(LOG_WARNING, "the save file could not be removed");
+  }
+
+  activeScreen = Screen::won;
+}
