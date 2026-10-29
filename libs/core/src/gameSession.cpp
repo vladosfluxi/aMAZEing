@@ -22,3 +22,19 @@ void GameSession::startGame(MazeGrid newMaze)
     }
 }
 
+void GameSession::restoreGame(MazeGrid savedMaze, Position savedPlayerPosition,
+    const GameStatistics& savedStatistics)
+{
+    activeMaze = std::move(savedMaze);
+    currentStatistics = savedStatistics;
+
+    // The file could have been edited by hand, so the position is checked.
+    currentPlayerPosition =
+        activeMaze.contains(savedPlayerPosition) ? savedPlayerPosition : activeMaze.startPosition();
+    gameIsFinished = hasMaze() && currentPlayerPosition == activeMaze.exitPosition();
+
+    if (hasMaze())
+    {
+        activeMaze.cellAt(currentPlayerPosition).visitedByPlayer = true;
+    }
+}
