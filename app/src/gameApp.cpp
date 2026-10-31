@@ -392,3 +392,22 @@ void GameApp::showMessage(std::string text) {
   statusMessage = std::move(text);
   statusMessageTimer = messageSeconds;
 }
+Rectangle GameApp::mazeViewport() const
+{
+    const float screenWidth = static_cast<float>(GetScreenWidth());
+    const float screenHeight = static_cast<float>(GetScreenHeight());
+
+    return Rectangle{panelPadding, topBarHeight, screenWidth - sidePanelWidth - 3.0f * panelPadding,
+                     screenHeight - topBarHeight - panelPadding};
+}
+
+CellReport GameApp::cellForThePanel() const
+{
+    if (cellUnderMouse.has_value())
+    {
+        return session.inspectCell(*cellUnderMouse);
+    }
+    return session.inspectPlayerCell();
+}
+
+
