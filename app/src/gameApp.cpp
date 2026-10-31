@@ -392,3 +392,97 @@ void GameApp::showMessage(std::string text) {
   statusMessage = std::move(text);
   statusMessageTimer = messageSeconds;
 }
+Rectangle GameApp::mazeViewport() const
+{
+    const float screenWidth = static_cast<float>(GetScreenWidth());
+    const float screenHeight = static_cast<float>(GetScreenHeight());
+
+    return Rectangle{panelPadding, topBarHeight, screenWidth - sidePanelWidth - 3.0f * panelPadding,
+                     screenHeight - topBarHeight - panelPadding};
+}
+
+CellReport GameApp::cellForThePanel() const
+{
+    if (cellUnderMouse.has_value())
+    {
+        return session.inspectCell(*cellUnderMouse);
+    }
+    return session.inspectPlayerCell();
+}
+
+
+void GameApp::drawMazeArea() const
+{
+    const MazeGrid& maze = session.maze();
+    const MazeLayout layout = calculateMazeLayout(maze, mazeViewport());
+
+    drawMazeCells(maze, layout, numbersVisible);
+
+    if (settings.showHintPath)
+    {
+        drawHintPath(session.hintPath(), layout);
+    }
+
+    if (cellUnderMouse.has_value() && !(*cellUnderMouse == session.playerPosition()))
+    {
+        drawCellFrame(*cellUnderMouse, layout);
+    }
+
+    drawMazeWalls(maze, layout);
+    drawPlayer(session.playerPosition(), layout);
+}
+
+void GameApp::drawActiveScreen()
+{
+    switch (activeScreen)
+    {
+    case Screen::mainMenu:
+        drawMainMenu(menuItems, menuIndex, settings.playerName, statusMessage);
+        break;
+
+    case Screen::sizeSetup:
+        drawSizeScreen(typedRowText, typedColumnText, sizeFieldIndex, statusMessage);
+        break;
+
+    case Screen::nameSetup:
+        drawNameScreen(typedName, statusMessage);
+        break;
+
+    case Screen::scoreBoard:
+        drawScoreScreen(scoreEntries);
+        break;
+
+    case Screen::help:
+        drawHelpScreen(dataDirectory().string());
+        break;
+
+    case Screen::playing:
+    case Screen::won:
+    {
+        if (!session.hasMaze())
+        {
+            break;
+        }
+
+        const std::string mazeTitle = "Labyrinth " + std::to_string(session.maze().rowCount()) + "x" +
+                                      std::to_string(session.maze().columnCount());
+        drawTopBar(mazeTitle, "escape saves the run and goes back to the menu");
+        drawMazeArea();
+
+        const Rectangle panelArea{static_cast<float>(GetScreenWidth()) - sidePanelWidth - panelPadding,
+                                  topBarHeight, sidePanelWidth,
+                                  static_cast<float>(GetScreenHeight()) - topBarHeight - panelPadding};
+
+        const CellReport shownCell = cellForThePanel();
+        const bool shownCellIsPlayerCell = shownCell.position == session.playerPosition();
+        drawGamePanel(panelArea, session, settings.playerName, statusMessage, settings.showHintPath,
+                      numbersVisible, shownCell, shownCellIsPlayerCell);
+
+        if (activeScreen == Screen::won)
+        {
+            drawWinOverlay(session, lastScore, lastPlace);
+        }
+        break;
+    }
+    }
+}
