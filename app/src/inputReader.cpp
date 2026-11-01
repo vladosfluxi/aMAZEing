@@ -30,7 +30,32 @@ std::optional<Direction> readMoveDirection()
         {
             return keys.direction;
         }
+
     }
 
     return std::nullopt;
 }
+
+int pollMenuStep()
+{
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))
+    {
+        return -1;
+    }
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+bool pollConfirm()
+{
+    return IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE);
+}
+
+bool pollCancel()
+{
+    return IsKeyPressed(KEY_ESCAPE);
+}
+
