@@ -17,3 +17,20 @@ static constexpr std::array<DirectionKeys, directionCount> directionKeyTable{
     DirectionKeys{Direction::south, KEY_DOWN, KEY_S},
     DirectionKeys{Direction::west, KEY_LEFT, KEY_A}};
 
+std::optional<Direction> readMoveDirection()
+{
+    for (const DirectionKeys& keys : directionKeyTable)
+    {
+        // IsKeyPressed answers the first press, IsKeyPressedRepeat answers a
+        // key that is held down.
+        const bool wasPressed = IsKeyPressed(keys.arrowKey) || IsKeyPressed(keys.letterKey);
+        const bool wasRepeated = IsKeyPressedRepeat(keys.arrowKey) || IsKeyPressedRepeat(keys.letterKey);
+
+        if (wasPressed || wasRepeated)
+        {
+            return keys.direction;
+        }
+    }
+
+    return std::nullopt;
+}
