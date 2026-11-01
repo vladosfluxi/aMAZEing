@@ -59,3 +59,26 @@ bool pollCancel()
     return IsKeyPressed(KEY_ESCAPE);
 }
 
+
+void editTypedText(std::string& text, int maxLength, bool digitsOnly)
+{
+    int typedCharacter = GetCharPressed();
+    while (typedCharacter > 0)
+    {
+        const bool isPrintable = typedCharacter >= 32 && typedCharacter <= 126;
+        const bool isDigit = typedCharacter >= '0' && typedCharacter <= '9';
+        const bool isAllowed = digitsOnly ? isDigit : isPrintable;
+
+        if (isAllowed && text.size() < static_cast<std::size_t>(maxLength))
+        {
+            text.push_back(static_cast<char>(typedCharacter));
+        }
+
+        typedCharacter = GetCharPressed();
+    }
+
+    if (IsKeyPressed(KEY_BACKSPACE) && !text.empty())
+    {
+        text.pop_back();
+    }
+}
