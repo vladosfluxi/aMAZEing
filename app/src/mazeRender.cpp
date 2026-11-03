@@ -144,3 +144,22 @@ void drawMazeWalls(const MazeGrid &maze, const MazeLayout &layout) {
     }
   }
 }
+void drawHintPath(const std::vector<Position> &hintPath,
+                  const MazeLayout &layout) {
+  if (hintPath.size() < 2) {
+    return;
+  }
+
+  const float lineThickness = std::max(2.0f, layout.cellSize * 0.18f);
+  for (std::size_t stepIndex = 1; stepIndex < hintPath.size(); ++stepIndex) {
+    DrawLineEx(cellCenter(hintPath[stepIndex - 1], layout),
+               cellCenter(hintPath[stepIndex], layout), lineThickness,
+               hintColor);
+  }
+}
+
+void drawPlayer(Position position, const MazeLayout &layout) {
+  const Vector2 center = cellCenter(position, layout);
+  DrawCircleV(center, layout.cellSize * 0.3f, playerColor);
+  DrawCircleLinesV(center, layout.cellSize * 0.3f, backgroundColor);
+}
