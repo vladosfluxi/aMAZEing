@@ -53,3 +53,16 @@ static Rectangle fullScreenPanel() {
                    static_cast<float>(GetScreenHeight()) - topBarHeight -
                        panelPadding};
 }
+std::string timeText(double seconds) {
+  const int wholeSeconds = std::max(0, static_cast<int>(seconds));
+  const int minutePart = wholeSeconds / 60;
+  const int secondPart = wholeSeconds % 60;
+
+  std::string result = std::to_string(minutePart);
+  result += ':';
+  if (secondPart < 10) {
+    result += '0';
+  }
+  result += std::to_string(secondPart);
+  return result;
+}
