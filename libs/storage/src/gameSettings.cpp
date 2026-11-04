@@ -23,3 +23,14 @@ GameSettings loadSettings()
     settings.showHintPath = readField(*document, "showHintPath", settings.showHintPath);
     return settings;
 }
+
+bool saveSettings(const GameSettings& settings)
+{
+    const nlohmann::json document = {
+        {"playerName", cleanPlayerName(settings.playerName)},
+        {"rowCount", clampMazeSide(settings.rowCount)},
+        {"columnCount", clampMazeSide(settings.columnCount)},
+        {"showHintPath", settings.showHintPath} };
+
+    return writeJsonFile(settingsFilePath(), document);
+}
