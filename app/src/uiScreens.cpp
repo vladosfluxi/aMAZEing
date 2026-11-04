@@ -66,3 +66,63 @@ std::string timeText(double seconds) {
   result += std::to_string(secondPart);
   return result;
 }
+void drawTopBar(const std::string &title, const std::string &subtitle) {
+  DrawText(title.c_str(), static_cast<int>(panelPadding), 14, headingFontSize,
+           textColor);
+  if (!subtitle.empty()) {
+    const int titleWidth = MeasureText(title.c_str(), headingFontSize);
+    DrawText(subtitle.c_str(), static_cast<int>(panelPadding) + titleWidth + 16,
+             20, smallFontSize, dimTextColor);
+  }
+
+  DrawLineEx(Vector2{panelPadding, topBarHeight - 12.0f},
+             Vector2{static_cast<float>(GetScreenWidth()) - panelPadding,
+                     topBarHeight - 12.0f},
+             1.0f, panelBorderColor);
+}
+
+void drawPanel(Rectangle area) {
+  DrawRectangleRec(area, panelColor);
+  DrawRectangleLinesEx(area, 1.0f, panelBorderColor);
+}
+
+void drawMainMenu(const std::vector<std::string> &menuItems, int selectedIndex,
+                  const std::string &playerName, const std::string &message) {
+  const int centerX = GetScreenWidth() / 2;
+
+  drawCenteredText("LABYRINTH", centerX, 90, titleFontSize, highlightColor);
+  drawCenteredText("find the way from the top left corner to the exit", centerX,
+                   146, textFontSize, dimTextColor);
+
+  const Rectangle menuArea = panelUnderTitle(
+      420.0f, static_cast<float>(menuItems.size()) * 46.0f + 40.0f, 190.0f);
+  drawPanel(menuArea);
+
+  for (std::size_t itemIndex = 0; itemIndex < menuItems.size(); ++itemIndex) {
+    const bool isSelected = static_cast<int>(itemIndex) == selectedIndex;
+    const int positionY =
+        static_cast<int>(menuArea.y + 20.0f) + static_cast<int>(itemIndex) * 46;
+
+    if (isSelected) {
+      DrawRectangle(static_cast<int>(menuArea.x + 10.0f), positionY - 6,
+                    static_cast<int>(menuArea.width - 20.0f), 38,
+                    Color{46, 54, 76, 255});
+      DrawText(">", static_cast<int>(menuArea.x + 22.0f), positionY,
+               headingFontSize, highlightColor);
+    }
+
+    DrawText(menuItems[itemIndex].c_str(), static_cast<int>(menuArea.x + 54.0f),
+             positionY, headingFontSize, isSelected ? textColor : dimTextColor);
+  }
+
+  drawCenteredText("player: " + playerName, centerX,
+                   static_cast<int>(menuArea.y + menuArea.height) + 18,
+                   textFontSize, dimTextColor);
+  drawCenteredText("arrow keys choose, enter confirms", centerX,
+                   GetScreenHeight() - 32, smallFontSize, dimTextColor);
+
+  if (!message.empty()) {
+    drawCenteredText(message, centerX, static_cast<int>(menuArea.y - 44.0f),
+                     textFontSize, warningColor);
+  }
+}
