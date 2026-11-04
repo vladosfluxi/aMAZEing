@@ -34,3 +34,35 @@ bool saveSettings(const GameSettings& settings)
 
     return writeJsonFile(settingsFilePath(), document);
 }
+std::string cleanPlayerName(const std::string& rawName)
+{
+    std::string cleanName;
+
+    for (const char character : rawName)
+    {
+        const unsigned char plainCharacter = static_cast<unsigned char>(character);
+        const bool isAllowed = std::isalnum(plainCharacter) != 0 || character == ' ' || character == '_' ||
+            character == '-';
+        if (isAllowed)
+        {
+            cleanName.push_back(character);
+        }
+    }
+
+    
+    const std::size_t firstUsefulCharacter = cleanName.find_first_not_of(' ');
+    if (firstUsefulCharacter == std::string::npos)
+    {
+        return "Player";
+    }
+
+    const std::size_t lastUsefulCharacter = cleanName.find_last_not_of(' ');
+    cleanName = cleanName.substr(firstUsefulCharacter, lastUsefulCharacter - firstUsefulCharacter + 1);
+
+    if (cleanName.size() > static_cast<std::size_t>(maxPlayerNameLength))
+    {
+        cleanName.resize(static_cast<std::size_t>(maxPlayerNameLength));
+    }
+
+    return cleanName;
+}
