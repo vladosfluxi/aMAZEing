@@ -17,3 +17,68 @@ static constexpr std::array<DirectionKeys, directionCount> directionKeyTable{
     DirectionKeys{Direction::south, KEY_DOWN, KEY_S},
     DirectionKeys{Direction::west, KEY_LEFT, KEY_A}};
 
+std::optional<Direction> readMoveDirection()
+{
+    for (const DirectionKeys& keys : directionKeyTable)
+    {
+        // IsKeyPressed answers the first press, IsKeyPressedRepeat answers a
+        // key that is held down.
+        const bool wasPressed = IsKeyPressed(keys.arrowKey) || IsKeyPressed(keys.letterKey);
+        const bool wasRepeated = IsKeyPressedRepeat(keys.arrowKey) || IsKeyPressedRepeat(keys.letterKey);
+
+        if (wasPressed || wasRepeated)
+        {
+            return keys.direction;
+        }
+
+    }
+
+    return std::nullopt;
+}
+
+int pollMenuStep()
+{
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))
+    {
+        return -1;
+    }
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+bool pollConfirm()
+{
+    return IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) || IsKeyPressed(KEY_SPACE);
+}
+
+bool pollCancel()
+{
+    return IsKeyPressed(KEY_ESCAPE);
+}
+
+
+void editTypedText(std::string& text, int maxLength, bool digitsOnly)
+{
+    int typedCharacter = GetCharPressed();
+    while (typedCharacter > 0)
+    {
+        const bool isPrintable = typedCharacter >= 32 && typedCharacter <= 126;
+        const bool isDigit = typedCharacter >= '0' && typedCharacter <= '9';
+        const bool isAllowed = digitsOnly ? isDigit : isPrintable;
+
+        if (isAllowed && text.size() < static_cast<std::size_t>(maxLength))
+        {
+            text.push_back(static_cast<char>(typedCharacter));
+        }
+
+        typedCharacter = GetCharPressed();
+    }
+
+    if (IsKeyPressed(KEY_BACKSPACE) && !text.empty())
+    {
+        text.pop_back();
+    }
+}
