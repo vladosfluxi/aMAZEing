@@ -243,3 +243,59 @@ void drawHelpScreen(const std::string &dataFolderText) {
            static_cast<int>(area.x + 22.0f), positionY + 6, smallFontSize,
            dimTextColor);
 }
+
+void drawScoreScreen(const std::vector<ScoreEntry> &entries) {
+  drawTopBar("Best runs", "escape goes back to the menu");
+
+  const Rectangle area = fullScreenPanel();
+  drawPanel(area);
+
+  if (entries.empty()) {
+    drawCenteredText(
+        "no finished run yet - win a game and your name shows up here",
+        static_cast<int>(area.x + area.width * 0.5f),
+        static_cast<int>(area.y + 40.0f), textFontSize, dimTextColor);
+    return;
+  }
+
+  const std::array<int, 8> columnOffsets{0, 40, 230, 330, 420, 500, 590, 690};
+  const std::array<std::string, 8> columnTitles{
+      "#", "player", "maze", "steps", "keys", "time", "points", "played at"};
+
+  const int leftEdge = static_cast<int>(area.x + 24.0f);
+  int positionY = static_cast<int>(area.y + 20.0f);
+
+  for (std::size_t columnIndex = 0; columnIndex < columnTitles.size();
+       ++columnIndex) {
+    DrawText(columnTitles[columnIndex].c_str(),
+             leftEdge + columnOffsets[columnIndex], positionY, textFontSize,
+             dimTextColor);
+  }
+  positionY += lineHeight + 6;
+
+  for (std::size_t entryIndex = 0; entryIndex < entries.size(); ++entryIndex) {
+    const ScoreEntry &entry = entries[entryIndex];
+    const Color rowColor = entryIndex == 0 ? highlightColor : textColor;
+
+    const std::array<std::string, 8> rowTexts{
+        std::to_string(entryIndex + 1),
+        entry.playerName,
+        std::to_string(entry.rowCount) + "x" +
+            std::to_string(entry.columnCount),
+        std::to_string(entry.stepCount),
+        std::to_string(entry.keysUsed),
+        timeText(entry.elapsedSeconds),
+        std::to_string(entry.score),
+        entry.playedAt};
+
+    for (std::size_t columnIndex = 0; columnIndex < rowTexts.size();
+         ++columnIndex) {
+      const Color columnColor =
+          columnIndex + 1 == rowTexts.size() ? dimTextColor : rowColor;
+      DrawText(rowTexts[columnIndex].c_str(),
+               leftEdge + columnOffsets[columnIndex], positionY, textFontSize,
+               columnColor);
+    }
+    positionY += lineHeight;
+  }
+}
