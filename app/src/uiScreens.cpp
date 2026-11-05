@@ -126,3 +126,120 @@ void drawMainMenu(const std::vector<std::string> &menuItems, int selectedIndex,
                      textFontSize, warningColor);
   }
 }
+
+void drawSizeScreen(const std::string &rowText, const std::string &columnText,
+                    int activeField, const std::string &message) {
+  const int centerX = GetScreenWidth() / 2;
+  drawTopBar("New game", "step 1 of 1: the size of the maze");
+
+  const Rectangle area = centeredPanel(520.0f, 320.0f);
+  drawPanel(area);
+
+  drawCenteredText("how big should the maze be?", centerX,
+                   static_cast<int>(area.y + 26.0f), headingFontSize,
+                   textColor);
+  drawCenteredText("allowed: 10 to 50 for both sides", centerX,
+                   static_cast<int>(area.y + 64.0f), smallFontSize,
+                   dimTextColor);
+
+  const float fieldWidth = 160.0f;
+  const float fieldHeight = 54.0f;
+  const float fieldY = area.y + 124.0f;
+
+  DrawText("rows", static_cast<int>(area.x + 60.0f),
+           static_cast<int>(fieldY - 26.0f), smallFontSize, dimTextColor);
+  drawTextField(rowText,
+                Rectangle{area.x + 60.0f, fieldY, fieldWidth, fieldHeight},
+                activeField == 0);
+
+  DrawText("columns", static_cast<int>(area.x + 300.0f),
+           static_cast<int>(fieldY - 26.0f), smallFontSize, dimTextColor);
+  drawTextField(columnText,
+                Rectangle{area.x + 300.0f, fieldY, fieldWidth, fieldHeight},
+                activeField == 1);
+
+  drawCenteredText("up / down change the field, left / right change the number",
+                   centerX, static_cast<int>(area.y + 224.0f), smallFontSize,
+                   dimTextColor);
+  drawCenteredText("enter starts the game, escape goes back", centerX,
+                   static_cast<int>(area.y + 252.0f), smallFontSize,
+                   dimTextColor);
+
+  if (!message.empty()) {
+    drawCenteredText(message, centerX,
+                     static_cast<int>(area.y + area.height) + 20, textFontSize,
+                     warningColor);
+  }
+}
+
+void drawNameScreen(const std::string &typedName, const std::string &message) {
+  const int centerX = GetScreenWidth() / 2;
+  drawTopBar("Player name", "used for the score board");
+
+  const Rectangle area = centeredPanel(520.0f, 220.0f);
+  drawPanel(area);
+
+  drawCenteredText("who is playing?", centerX, static_cast<int>(area.y + 26.0f),
+                   headingFontSize, textColor);
+  drawTextField(
+      typedName,
+      Rectangle{area.x + 60.0f, area.y + 86.0f, area.width - 120.0f, 54.0f},
+      true);
+  drawCenteredText("letters, digits, space, - and _ are allowed", centerX,
+                   static_cast<int>(area.y + 156.0f), smallFontSize,
+                   dimTextColor);
+  drawCenteredText("enter saves the name, escape goes back", centerX,
+                   static_cast<int>(area.y + 182.0f), smallFontSize,
+                   dimTextColor);
+
+  if (!message.empty()) {
+    drawCenteredText(message, centerX,
+                     static_cast<int>(area.y + area.height) + 20, textFontSize,
+                     warningColor);
+  }
+}
+
+void drawHelpScreen(const std::string &dataFolderText) {
+  drawTopBar("How to play", "escape goes back to the menu");
+
+  const Rectangle area = fullScreenPanel();
+  drawPanel(area);
+
+  const std::array<std::string, 16> helpLines{
+      "Goal",
+      "  You start in the top left cell and have to reach the exit in the "
+      "bottom right cell.",
+      "  The whole maze is visible from above, so you can plan your way before "
+      "you walk it.",
+      "",
+      "Rules",
+      "  - Grey lines are walls and cannot be crossed.",
+      "  - An orange line is a door. A door is a shortcut, but it needs one "
+      "key to open.",
+      "  - Yellow circles are keys. Walking over a key puts it into your "
+      "inventory.",
+      "  - Every cell shows a number from 1 to 9. Walking on it adds the "
+      "number to your cost.",
+      "  - Points grow with the size of the maze and with opened doors, and "
+      "shrink with",
+      "    steps, cost and time, so the short and cheap way is the best way.",
+      "",
+      "Keys",
+      "  arrows or W A S D move      H shows or hides the hint      TAB shows "
+      "the numbers",
+      "  F2 saves the run           F5 builds a new maze           escape goes "
+      "to the menu",
+      "  the mouse asks about any cell of the maze"};
+
+  int positionY = static_cast<int>(area.y + 22.0f);
+  for (const std::string &helpLine : helpLines) {
+    const bool isHeadline = !helpLine.empty() && helpLine.front() != ' ';
+    DrawText(helpLine.c_str(), static_cast<int>(area.x + 22.0f), positionY,
+             textFontSize, isHeadline ? highlightColor : textColor);
+    positionY += lineHeight;
+  }
+
+  DrawText(("your games are stored in: " + dataFolderText).c_str(),
+           static_cast<int>(area.x + 22.0f), positionY + 6, smallFontSize,
+           dimTextColor);
+}
