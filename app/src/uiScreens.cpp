@@ -299,3 +299,96 @@ void drawScoreScreen(const std::vector<ScoreEntry> &entries) {
     positionY += lineHeight;
   }
 }
+
+void drawGamePanel(Rectangle area, const GameSession &session,
+                   const std::string &playerName, const std::string &message,
+                   bool hintVisible, bool numbersVisible,
+                   const CellReport &shownCell, bool shownCellIsPlayerCell) {
+  drawPanel(area);
+
+  const int leftEdge = static_cast<int>(area.x + 18.0f);
+  int positionY = static_cast<int>(area.y + 18.0f);
+
+  DrawText(playerName.c_str(), leftEdge, positionY, headingFontSize,
+           highlightColor);
+  positionY += 40;
+
+  const GameStatistics &statistics = session.statistics();
+  const Position playerPosition = session.playerPosition();
+
+  drawLabelledValue("position:",
+                    "row " + std::to_string(playerPosition.row) + ", col " +
+                        std::to_string(playerPosition.column),
+                    leftEdge, positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("steps:", std::to_string(statistics.stepCount), leftEdge,
+                    positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("keys:", std::to_string(statistics.keyCount), leftEdge,
+                    positionY,
+                    statistics.keyCount > 0 ? keyColor : dimTextColor);
+  positionY += lineHeight;
+  drawLabelledValue("doors opened:", std::to_string(statistics.keysUsed),
+                    leftEdge, positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("cost:", std::to_string(statistics.collectedCost), leftEdge,
+                    positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("time:", timeText(statistics.elapsedSeconds), leftEdge,
+                    positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("points now:", std::to_string(session.currentScore()),
+                    leftEdge, positionY, successColor);
+  positionY += lineHeight + 14;
+
+  const std::string cellTitle =
+      shownCellIsPlayerCell
+          ? "this cell"
+          : "cell row " + std::to_string(shownCell.position.row) + ", col " +
+                std::to_string(shownCell.position.column);
+  DrawText(cellTitle.c_str(), leftEdge, positionY, textFontSize,
+           highlightColor);
+  positionY += lineHeight;
+  drawLabelledValue("number:", std::to_string(shownCell.stepCost), leftEdge,
+                    positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("open sides:", std::to_string(shownCell.openSides),
+                    leftEdge, positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("doors around:", std::to_string(shownCell.doorSides),
+                    leftEdge, positionY,
+                    shownCell.doorSides > 0 ? doorColor : textColor);
+  positionY += lineHeight;
+
+  drawLabelledValue(
+      "way to exit:",
+      hintVisible ? std::to_string(shownCell.distanceToExit) + " steps"
+                  : "press H",
+      leftEdge, positionY, hintVisible ? textColor : dimTextColor);
+  positionY += lineHeight + 14;
+
+  DrawText("keys of the game", leftEdge, positionY, textFontSize,
+           highlightColor);
+  positionY += lineHeight;
+
+  const std::array<std::string, 6> controlLines{
+      "arrows / WASD  move",
+      std::string("H  hint: ") + (hintVisible ? "on" : "off"),
+      std::string("TAB  numbers: ") + (numbersVisible ? "on" : "off"),
+      "F2 save    F5 new maze",
+      "escape  save and go back",
+      "mouse  asks about a cell"};
+
+  for (const std::string &controlLine : controlLines) {
+    DrawText(controlLine.c_str(), leftEdge, positionY, smallFontSize,
+             dimTextColor);
+    positionY += 24;
+  }
+
+  if (!message.empty()) {
+    const int bottomMessageY = static_cast<int>(area.y + area.height) - 48;
+    DrawText(message.c_str(), leftEdge,
+             std::max(positionY + 16, bottomMessageY), smallFontSize,
+             warningColor);
+  }
+}
