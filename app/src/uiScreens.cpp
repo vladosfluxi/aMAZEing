@@ -392,3 +392,50 @@ void drawGamePanel(Rectangle area, const GameSession &session,
              warningColor);
   }
 }
+void drawWinOverlay(const GameSession &session, int score, int place) {
+  DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                Color{10, 12, 18, 200});
+
+  const Rectangle area = centeredPanel(520.0f, 380.0f);
+  drawPanel(area);
+
+  const int centerX = static_cast<int>(area.x + area.width * 0.5f);
+  const GameStatistics &statistics = session.statistics();
+
+  drawCenteredText("you found the exit", centerX,
+                   static_cast<int>(area.y + 28.0f), titleFontSize,
+                   successColor);
+
+  int positionY = static_cast<int>(area.y + 108.0f);
+  const int leftEdge = static_cast<int>(area.x + 70.0f);
+
+  drawLabelledValue("maze:",
+                    std::to_string(session.maze().rowCount()) + "x" +
+                        std::to_string(session.maze().columnCount()),
+                    leftEdge, positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("steps:", std::to_string(statistics.stepCount), leftEdge,
+                    positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("cost:", std::to_string(statistics.collectedCost), leftEdge,
+                    positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("doors opened:", std::to_string(statistics.keysUsed),
+                    leftEdge, positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("time:", timeText(statistics.elapsedSeconds), leftEdge,
+                    positionY, textColor);
+  positionY += lineHeight;
+  drawLabelledValue("points:", std::to_string(score), leftEdge, positionY,
+                    highlightColor);
+  positionY += lineHeight + 18;
+
+  drawCenteredText(place > 0 ? "place " + std::to_string(place) +
+                                   " on the score board"
+                             : "not in the best ten this time",
+                   centerX, positionY, textFontSize, dimTextColor);
+
+  drawCenteredText("enter goes back to the menu", centerX,
+                   static_cast<int>(area.y + area.height) - 36, smallFontSize,
+                   dimTextColor);
+}
