@@ -109,3 +109,58 @@ static void addShortcutDoors(MazeGrid& maze, int doorCount, std::mt19937& random
     }
 }
 
+static void placeKeys(MazeGrid& maze, int keyCount, std::mt19937& randomEngine)
+{
+    std::vector<int> possibleIndexes;
+    for (int cellIndex = 0; cellIndex < maze.cellCount(); ++cellIndex)
+    {
+        const Position position = maze.positionOfIndex(cellIndex);
+        if (!(position == maze.startPosition()) && !(position == maze.exitPosition()))
+        {
+            possibleIndexes.push_back(cellIndex);
+        }
+    }
+
+    std::shuffle(possibleIndexes.begin(), possibleIndexes.end(), randomEngine);
+
+    const std::size_t keysToPlace = std::min(static_cast<std::size_t>(keyCount), possibleIndexes.size());
+    for (std::size_t keyIndex = 0; keyIndex < keysToPlace; ++keyIndex)
+    {
+        maze.cellAtIndex(possibleIndexes[keyIndex]).hasKey = true;
+    }
+}
+
+
+static void assignStepCosts(MazeGrid& maze, std::mt19937& randomEngine)
+{
+    std::uniform_int_distribution<int> pickCost(minStepCost, maxStepCost);
+    for (int cellIndex = 0; cellIndex < maze.cellCount(); ++cellIndex)
+    {
+        maze.cellAtIndex(cellIndex).stepCost = pickCost(randomEngine);
+    }
+
+    maze.cellAt(maze.startPosition()).stepCost = 0; // the start is free
+}
+
+MazeGrid generateMaze(int rowCount, int columnCount, unsigned int randomSeed)
+{
+    MazeGrid maze(clampMazeSide(rowCount), clampMazeSide(columnCount));
+    std::mt19937 randomEngine(randomSeed);
+
+    // One key more than there are doors, so nobody can get stuck.
+    const int doorCount = std::max(1, (maze.rowCount() + maze.columnCount()) / 12);
+    const int keyCount = doorCount + 1;
+
+    carvePassages(maze, randomEngine);
+    addShortcutDoors(maze, doorCount, randomEngine);
+    placeKeys(maze, keyCount, randomEngine);
+    assignStepCosts(maze, randomEngine);
+
+    return maze;
+}
+
+unsigned int makeRandomSeed()
+{
+    std::random_device seedSource;
+    return seedSource();
+}
