@@ -40,3 +40,46 @@ const Cell& MazeGrid::cellAt(Position position) const
     return cellAtIndex(indexOfPosition(position));
 }
 
+Cell& MazeGrid::cellAtIndex(int index)
+{
+    // at() checks the index and throws instead of writing somewhere else.
+    return cellArray.at(static_cast<std::size_t>(index));
+}
+
+const Cell& MazeGrid::cellAtIndex(int index) const
+{
+    return cellArray.at(static_cast<std::size_t>(index));
+}
+
+WallState MazeGrid::wallStateAt(Position position, Direction direction) const
+{
+    return cellAt(position).walls[static_cast<std::size_t>(indexOfDirection(direction))];
+}
+
+void MazeGrid::setWallBetween(Position position, Direction direction, WallState newState)
+{
+    cellAt(position).walls[static_cast<std::size_t>(indexOfDirection(direction))] = newState;
+
+    const Position neighbour = neighbourOf(position, direction);
+    if (contains(neighbour))
+    {
+        const Direction backwards = oppositeDirection(direction);
+        cellAt(neighbour).walls[static_cast<std::size_t>(indexOfDirection(backwards))] = newState;
+    }
+}
+
+Position MazeGrid::neighbourOf(Position position, Direction direction)
+{
+    switch (direction)
+    {
+    case Direction::north:
+        return Position{ position.row - 1, position.column };
+    case Direction::east:
+        return Position{ position.row, position.column + 1 };
+    case Direction::south:
+        return Position{ position.row + 1, position.column };
+    case Direction::west:
+        return Position{ position.row, position.column - 1 };
+    }
+    return position;
+}
