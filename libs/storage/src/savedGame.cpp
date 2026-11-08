@@ -67,3 +67,100 @@ static Cell cellFromJson(const nlohmann::json& document)
     wallsFromText(cell, readField(document, "walls", std::string()));
     return cell;
 }
+
+bool saveGame(const SavedGame& game)
+{
+    if (game.maze.isEmpty())
+    {
+        return false;
+    }
+
+    nlohmann::json cellList = nlohmann::json::array();
+    for (int cellIndex = 0; cellIndex < game.maze.cellCount(); ++cellIndex)
+    {
+        cellList.push_back(cellToJson(game.maze.cellAtIndex(cellIndex)));
+    }
+
+    const nlohmann::json document = {
+        {"version", saveFormatVersion},
+        {"playerName", cleanPlayerName(game.playerName)},
+        {"rowCount", game.maze.rowCount()},
+        {"columnCount", game.maze.columnCount()},
+        {"playerRow", game.playerPosition.row},
+        {"playerColumn", game.playerPosition.column},
+        {"statistics",
+         {{"stepCount", game.statistics.stepCount},
+          {"keyCount", game.statistics.keyCount},
+          {"keysUsed", game.statistics.keysUsed},
+          {"collectedCost", game.statistics.collectedCost},
+          {"elapsedSeconds", game.statistics.elapsedSeconds}}},
+        {"cells", cellList} };
+
+    return writeJsonFile(savedGameFilePath(), document);
+}
+
+std::optional<SavedGame> loadGame()
+{
+    const std::optional<nlohmann::json> document = readJsonFile(savedGameFilePath());
+    if (!document.has_value() || !document->is_object())
+    {
+        return std::nullopt;
+    }
+
+    const int rowCount = readField(*document, "rowCount", 0);
+    const int columnCount = readField(*document, "columnCount", 0);
+    if (!isValidMazeSide(rowCount) || !isValidMazeSide(columnCount))
+    {
+        return std::nullopt; // not a legal maze size
+    }
+
+    if (!document->contains("cells") || !document->at("cells").is_array())
+    {
+        return std::nullopt;
+    }
+
+    const nlohmann::json& cellList = document->at("cells");
+    if (cellList.size() != static_cast<std::size_t>(rowCount * columnCount))
+    {
+        return std::nullopt; // the size and the cell list do not fit together
+    }
+
+    SavedGame game;
+    game.playerName = cleanPlayerName(readField(*document, "playerName", std::string("Player")));
+    game.maze = MazeGrid(rowCount, columnCount);
+    for (std::size_t cellIndex = 0; cellIndex < cellList.size(); ++cellIndex)
+    {
+        if (!cellList[cellIndex].is_object())
+        {
+            return std::nullopt;
+        }
+        game.maze.cellAtIndex(static_cast<int>(cellIndex)) = cellFromJson(cellList[cellIndex]);
+    }
+
+    game.playerPosition.row = std::clamp(readField(*document, "playerRow", 0), 0, rowCount - 1);
+    game.playerPosition.column = std::clamp(readField(*document, "playerColumn", 0), 0, columnCount - 1);
+
+    if (document->contains("statistics") && document->at("statistics").is_object())
+    {
+        const nlohmann::json& storedStatistics = document->at("statistics");
+        game.statistics.stepCount = std::max(0, readField(storedStatistics, "stepCount", 0));
+        game.statistics.keyCount = std::max(0, readField(storedStatistics, "keyCount", 0));
+        game.statistics.keysUsed = std::max(0, readField(storedStatistics, "keysUsed", 0));
+        game.statistics.collectedCost = std::max(0, readField(storedStatistics, "collectedCost", 0));
+        game.statistics.elapsedSeconds = std::max(0.0, readField(storedStatistics, "elapsedSeconds", 0.0));
+    }
+
+    return game;
+}
+
+bool hasSavedGame()
+{
+    std::error_code pathError;
+    return std::filesystem::exists(savedGameFilePath(), pathError) && !pathError;
+}
+
+bool removeSavedGame()
+{
+    std::error_code pathError;
+    return std::filesystem::remove(savedGameFilePath(), pathError) && !pathError;
+}
