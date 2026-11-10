@@ -1,13 +1,5 @@
 // A small stand-in for "CppUnitTest.h", the unit test framework that comes
 // with Visual Studio.
-//
-// The test files of this project are written in the Visual Studio way, with
-// TEST_CLASS, TEST_METHOD and Assert. On Windows with Visual Studio the real
-// framework is used and the tests appear in the Test Explorer. Every other
-// compiler uses this header instead, so the same test files also run on Linux
-// and macOS, where ctest starts them.
-//
-// Only the part of the framework that this project needs is written here.
 #pragma once
 
 #include <sstream>
@@ -18,15 +10,12 @@
 // a test project of Visual Studio does, so the same line works in both cases.
 namespace Microsoft::VisualStudio::CppUnitTestFramework
 {
-    // Thrown by a check that failed. The runner catches it, writes the reason
-    // and goes on with the next test method.
     struct TestFailure
     {
         std::string reason;
     };
 
-    // Turns the wide message of a check into normal text. The tests only use
-    // plain letters, so taking the characters over one by one is enough.
+    // Turns the wide message of a check into normal text.
     std::string messageText(const wchar_t* message);
 
     // Stops the running test method and reports why.
@@ -42,8 +31,7 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework
         return textStream.str();
     }
 
-    // The checks of the framework. Every one of them ends the test method as
-    // soon as it fails, exactly like in Visual Studio.
+    // The checks of the framework.
     class Assert
     {
     public:
@@ -121,7 +109,7 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework
         explicit TestClassNameSetter(const char* className);
     };
 
-    // One of these is created for every TEST_METHOD, and it puts the method
+    // One of these is created for every TEST_METHOD and it puts the method
     // into the list of all tests.
     struct TestMethodRegistrar
     {
@@ -129,15 +117,11 @@ namespace Microsoft::VisualStudio::CppUnitTestFramework
     };
 
     // Runs every registered test method and writes the results.
-    // Gives back 0 when everything passed and 1 when something failed.
     int runAllTests();
 }
 
-// The three macros of the framework.
-//
 // TEST_CLASS opens a class, TEST_METHOD writes a test into it, and
-// REGISTER_TEST_CLASS makes the tests of the class known. Visual Studio finds
-// the classes by itself, so there the last macro is empty.
+// REGISTER_TEST_CLASS makes the tests of the class known.
 #define TEST_CLASS(className) struct className
 
 #define TEST_METHOD(methodName)                                                                    \
