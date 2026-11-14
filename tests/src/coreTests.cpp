@@ -130,3 +130,31 @@ public:
     }
 };
 REGISTER_TEST_CLASS(MazeGridTests);
+
+TEST_CLASS(MazeSizeValidationTests)
+{
+public:
+    TEST_METHOD(onlySidesFromTenToFiftyAreAllowed)
+    {
+        Assert::IsFalse(isValidMazeSide(9), L"9 is too small for a maze side");
+        Assert::IsTrue(isValidMazeSide(10), L"10 is the smallest allowed side");
+        Assert::IsTrue(isValidMazeSide(50), L"50 is the biggest allowed side");
+        Assert::IsFalse(isValidMazeSide(51), L"51 is too big for a maze side");
+    }
+
+    TEST_METHOD(aWrongSideIsCorrected)
+    {
+        Assert::AreEqual(10, clampMazeSide(3), L"a side that is too small becomes 10");
+        Assert::AreEqual(50, clampMazeSide(70), L"a side that is too big becomes 50");
+        Assert::AreEqual(25, clampMazeSide(25), L"an allowed side stays as it is");
+    }
+
+    TEST_METHOD(theGeneratorNeverBuildsAnIllegalMaze)
+    {
+        const MazeGrid tinyMaze = generateMaze(2, 2, 123u);
+
+        Assert::AreEqual(10, tinyMaze.rowCount(), L"the generator corrects a size that is too small");
+        Assert::AreEqual(10, tinyMaze.columnCount(), L"the generator corrects both sides");
+    }
+};
+REGISTER_TEST_CLASS(MazeSizeValidationTests);
