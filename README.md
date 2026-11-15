@@ -22,8 +22,7 @@ games — is stored locally in **JSON** with **nlohmann/json**.
 | | |
 | --- | --- |
 | Presentation | [open the presentation](./docs/presentation.pptx) |
-| Technical documentation | [open the documentation](./docs/technicalDocumentatio.docx) |
-
+| Technical documentation | [open the documentation](./docs/technicalDocumentation.docx) |
 ## What the game does
 
 * The size of the maze is chosen by the player, from **10x10 up to 50x50**.
