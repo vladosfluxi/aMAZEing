@@ -1,4 +1,5 @@
-// Tests for the rules of the game (the static library labyrinthCore).
+// Tests for the rules (labyrinthCore). The core library knows nothing about
+// windows and nothing about files, so all of it can be tested without a screen.
 #include "pch.h"
 
 #include "core/gameSession.h"
@@ -8,12 +9,11 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-// A small maze that is built by hand, so every test knows exactly where the
-// walls, the doors and the keys are:
+// Built by hand so every test knows where the walls, the door and the key are:
 //
 //   (0,0) - (0,1) - (0,2)      the first row is one open corridor
-//     |                        (1,0) hangs below (0,0) and holds a key
-//   (1,0)   door   (1,2)       a door connects (1,0) and (1,1)
+//     |                        (1,0) hangs under (0,0) and holds a key
+//   (1,0)   door   (1,2)       a door between (1,0) and (1,1)
 static MazeGrid makeTestMaze()
 {
     MazeGrid maze(2, 3);
@@ -33,7 +33,6 @@ static MazeGrid makeTestMaze()
     return maze;
 }
 
-// Walks one step of a hint path and says in which direction it went.
 static Direction directionBetween(Position from, Position to)
 {
     if (to.row == from.row + 1)
@@ -215,7 +214,7 @@ public:
                 ++keyCount;
             }
 
-            // Every wall belongs to two cells, so only two sides are counted.
+            // only two sides, or every wall would be counted twice
             for (const Direction direction : {Direction::east, Direction::south})
             {
                 if (cell.walls[static_cast<std::size_t>(indexOfDirection(direction))] == WallState::door)
@@ -229,3 +228,51 @@ public:
     }
 };
 REGISTER_TEST_CLASS(MazeGeneratorTests);
+
+TEST_CLASS(MovementTests)
+{
+public:
+    TEST_METHOD(aNewGameStartsInTheTopLeftCorner)
+    {
+        GameSession session;
+        session.startGame(makeTestMaze());
+
+        Assert::IsTrue(session.isRunning(), L"a started game is running");
+        Assert::IsTrue(session.playerPosition() == Position{0, 0}, L"the player starts in the corner");
+        Assert::AreEqual(0, session.statistics().stepCount, L"a new game has no steps yet");
+    }
+
+    TEST_METHOD(aStepOverTheBorderIsRefused)
+    {
+        GameSession session;
+        session.startGame(makeTestMaze());
+
+        Assert::IsTrue(session.movePlayer(Direction::north) == MoveOutcome::outsideMaze,
+                       L"a step over the border is refused");
+        Assert::AreEqual(0, session.statistics().stepCount, L"a refused step is not counted");
+    }
+
+    TEST_METHOD(aStepThroughAnOpenSideWorks)
+    {
+        GameSession session;
+        session.startGame(makeTestMaze());
+
+        Assert::IsTrue(session.movePlayer(Direction::east) == MoveOutcome::moved,
+                       L"a step through an open side works");
+        Assert::IsTrue(session.playerPosition() == Position{0, 1}, L"the player stands on the new cell");
+        Assert::AreEqual(1, session.statistics().stepCount, L"the step was counted");
+        Assert::AreEqual(1, session.statistics().collectedCost, L"the number of the cell was added");
+    }
+
+    TEST_METHOD(aSolidWallStopsThePlayer)
+    {
+        GameSession session;
+        session.startGame(makeTestMaze());
+        session.movePlayer(Direction::east);
+
+        Assert::IsTrue(session.movePlayer(Direction::south) == MoveOutcome::blockedByWall,
+                       L"a solid wall stops the player");
+        Assert::IsTrue(session.playerPosition() == Position{0, 1}, L"a blocked step does not move anybody");
+    }
+};
+REGISTER_TEST_CLASS(MovementTests);
