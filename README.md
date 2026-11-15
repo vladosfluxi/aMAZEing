@@ -21,8 +21,8 @@ games — is stored locally in **JSON** with **nlohmann/json**.
 
 | | |
 | --- | --- |
-| Presentation | [open the presentation](PASTE_LINK_HERE) |
-| Technical documentation | [open the documentation](PASTE_LINK_HERE) |
+| Presentation | [open the presentation](../docs/presentation) |
+| Technical documentation | [open the documentation](../docs/technicalDocumentation) |
 
 ## What the game does
 
