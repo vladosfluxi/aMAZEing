@@ -387,3 +387,91 @@ public:
     }
 };
 REGISTER_TEST_CLASS(WinningAndScoreTests);
+
+TEST_CLASS(HintPathTests)
+{
+public:
+    TEST_METHOD(theHintStartsAtThePlayerAndEndsAtTheExit)
+    {
+        GameSession session;
+        session.startGame(generateMaze(15, 15, 2026u));
+
+        const std::vector<Position> path = session.hintPath();
+
+        Assert::IsFalse(path.empty(), L"the hint finds a way out of the maze");
+        Assert::IsTrue(path.front() == session.playerPosition(), L"the hint starts at the player");
+        Assert::IsTrue(path.back() == session.maze().exitPosition(), L"the hint ends at the exit");
+    }
+
+    TEST_METHOD(theHintUsesOnlyStepsToANeighbourCell)
+    {
+        GameSession session;
+        session.startGame(generateMaze(15, 15, 2026u));
+
+        const std::vector<Position> path = session.hintPath();
+        for (std::size_t stepIndex = 1; stepIndex < path.size(); ++stepIndex)
+        {
+            const Position previous = path[stepIndex - 1];
+            const Position current = path[stepIndex];
+            const int rowSteps = current.row > previous.row ? current.row - previous.row
+                                                            : previous.row - current.row;
+            const int columnSteps = current.column > previous.column ? current.column - previous.column
+                                                                     : previous.column - current.column;
+            Assert::AreEqual(1, rowSteps + columnSteps, L"every step goes to a neighbour cell");
+        }
+    }
+
+    TEST_METHOD(followingTheHintWinsTheGame)
+    {
+        GameSession session;
+        session.startGame(generateMaze(15, 15, 2026u));
+
+        const std::vector<Position> path = session.hintPath();
+        MoveOutcome lastOutcome = MoveOutcome::moved;
+        for (std::size_t stepIndex = 1; stepIndex < path.size(); ++stepIndex)
+        {
+            lastOutcome = session.movePlayer(directionBetween(session.playerPosition(), path[stepIndex]));
+        }
+
+        Assert::IsTrue(lastOutcome == MoveOutcome::reachedExit, L"following the hint wins the game");
+    }
+};
+REGISTER_TEST_CLASS(HintPathTests);
+
+TEST_CLASS(RestoredRunTests)
+{
+public:
+    TEST_METHOD(anImpossibleSavedPositionFallsBackToTheStart)
+    {
+        GameStatistics savedStatistics;
+        savedStatistics.stepCount = 12;
+
+        GameSession session;
+        session.restoreGame(makeTestMaze(), Position{99, 99}, savedStatistics);
+
+        Assert::IsTrue(session.playerPosition() == Position{0, 0}, L"an impossible position is corrected");
+        Assert::AreEqual(12, session.statistics().stepCount, L"the saved step count is kept");
+    }
+
+    TEST_METHOD(aCorrectSavedPositionIsKept)
+    {
+        GameSession session;
+        session.restoreGame(makeTestMaze(), Position{1, 2}, GameStatistics{});
+
+        Assert::IsTrue(session.playerPosition() == Position{1, 2}, L"a correct saved position is kept");
+    }
+
+    TEST_METHOD(theReportOfACellIsRight)
+    {
+        GameSession session;
+        session.restoreGame(makeTestMaze(), Position{1, 2}, GameStatistics{});
+
+        const CellReport exitReport = session.inspectPlayerCell();
+        Assert::IsTrue(exitReport.position == Position{1, 2}, L"the report describes the asked cell");
+        Assert::AreEqual(0, exitReport.distanceToExit, L"the exit cell is zero steps away");
+
+        const CellReport startReport = session.inspectCell(Position{0, 0});
+        Assert::AreEqual(2, startReport.openSides, L"the start cell of the test maze has two open sides");
+    }
+};
+REGISTER_TEST_CLASS(RestoredRunTests);
