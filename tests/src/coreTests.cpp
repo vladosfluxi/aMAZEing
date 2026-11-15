@@ -158,3 +158,74 @@ public:
     }
 };
 REGISTER_TEST_CLASS(MazeSizeValidationTests);
+
+TEST_CLASS(MazeGeneratorTests)
+{
+public:
+    TEST_METHOD(everyMazeCanBeFinishedWithoutAKey)
+    {
+        const std::vector<int> sidesToTest{10, 17, 33, 50};
+        for (const int side : sidesToTest)
+        {
+            const MazeGrid maze = generateMaze(side, side, 7u * static_cast<unsigned int>(side));
+
+            Assert::AreEqual(side, maze.rowCount(), L"the generated maze has the wanted size");
+            Assert::IsTrue(isSolvableWithoutKeys(maze), L"the maze can be finished without a single key");
+        }
+    }
+
+    TEST_METHOD(everyCellOfTheMazeCanBeReached)
+    {
+        const MazeGrid maze = generateMaze(25, 25, 55u);
+        const std::vector<int> distances = distancesTo(maze, maze.startPosition(), false);
+
+        for (const int distance : distances)
+        {
+            Assert::AreNotEqual(unreachableDistance, distance, L"no cell of the maze is locked away");
+        }
+    }
+
+    TEST_METHOD(theSameSeedBuildsTheSameMaze)
+    {
+        const MazeGrid firstMaze = generateMaze(20, 20, 4242u);
+        const MazeGrid secondMaze = generateMaze(20, 20, 4242u);
+
+        Assert::AreEqual(firstMaze.cellCount(), secondMaze.cellCount(), L"both mazes have the same size");
+        for (int cellIndex = 0; cellIndex < firstMaze.cellCount(); ++cellIndex)
+        {
+            const Cell& firstCell = firstMaze.cellAtIndex(cellIndex);
+            const Cell& secondCell = secondMaze.cellAtIndex(cellIndex);
+
+            Assert::IsTrue(firstCell.walls == secondCell.walls, L"both mazes have the same walls");
+            Assert::AreEqual(firstCell.stepCost, secondCell.stepCost, L"both mazes have the same numbers");
+        }
+    }
+
+    TEST_METHOD(thereAreAtLeastAsManyKeysAsDoors)
+    {
+        const MazeGrid maze = generateMaze(30, 30, 99u);
+        int doorCount = 0;
+        int keyCount = 0;
+
+        for (int cellIndex = 0; cellIndex < maze.cellCount(); ++cellIndex)
+        {
+            const Cell& cell = maze.cellAtIndex(cellIndex);
+            if (cell.hasKey)
+            {
+                ++keyCount;
+            }
+
+            // Every wall belongs to two cells, so only two sides are counted.
+            for (const Direction direction : {Direction::east, Direction::south})
+            {
+                if (cell.walls[static_cast<std::size_t>(indexOfDirection(direction))] == WallState::door)
+                {
+                    ++doorCount;
+                }
+            }
+        }
+
+        Assert::IsTrue(keyCount >= doorCount, L"the player can never be stuck in front of a door");
+    }
+};
+REGISTER_TEST_CLASS(MazeGeneratorTests);
