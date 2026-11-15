@@ -276,3 +276,114 @@ public:
     }
 };
 REGISTER_TEST_CLASS(MovementTests);
+
+TEST_CLASS(KeyAndDoorTests)
+{
+public:
+    TEST_METHOD(walkingOverAKeyPutsItIntoTheInventory)
+    {
+        GameSession session;
+        session.startGame(makeTestMaze());
+
+        session.movePlayer(Direction::south); // onto the cell with the key
+
+        Assert::AreEqual(1, session.statistics().keyCount, L"the key is in the inventory");
+        Assert::IsFalse(session.maze().cellAt(Position{1, 0}).hasKey, L"the key is gone from the maze");
+    }
+
+    TEST_METHOD(aDoorCanBeOpenedWithAKey)
+    {
+        GameSession session;
+        session.startGame(makeTestMaze());
+        session.movePlayer(Direction::south);
+
+        Assert::IsTrue(session.movePlayer(Direction::east) == MoveOutcome::unlockedDoor,
+                       L"with a key the door can be opened");
+        Assert::AreEqual(0, session.statistics().keyCount, L"opening a door uses one key");
+        Assert::AreEqual(1, session.statistics().keysUsed, L"the opened door was counted");
+        Assert::IsTrue(session.maze().wallStateAt(Position{1, 0}, Direction::east) == WallState::open,
+                       L"an opened door stays open");
+    }
+
+    TEST_METHOD(aDoorBlocksWithoutAKey)
+    {
+        MazeGrid mazeWithoutKeys = makeTestMaze();
+        mazeWithoutKeys.cellAt(Position{1, 0}).hasKey = false;
+
+        GameSession session;
+        session.startGame(std::move(mazeWithoutKeys));
+        session.movePlayer(Direction::south);
+
+        Assert::IsTrue(session.movePlayer(Direction::east) == MoveOutcome::blockedByDoor,
+                       L"without a key the door blocks the way");
+        Assert::IsTrue(session.playerPosition() == Position{1, 0}, L"a locked door does not move anybody");
+    }
+};
+REGISTER_TEST_CLASS(KeyAndDoorTests);
+
+TEST_CLASS(WinningAndScoreTests)
+{
+public:
+    TEST_METHOD(theExitWinsTheGame)
+    {
+        GameSession session;
+        session.startGame(makeTestMaze());
+
+        session.movePlayer(Direction::east);
+        session.movePlayer(Direction::east);
+
+        Assert::IsTrue(session.movePlayer(Direction::south) == MoveOutcome::reachedExit,
+                       L"the step onto the exit cell wins the game");
+        Assert::IsTrue(session.isFinished(), L"the game is finished");
+        Assert::IsFalse(session.isRunning(), L"a finished game is not running any more");
+    }
+
+    TEST_METHOD(aFinishedGameRefusesMoreSteps)
+    {
+        GameSession session;
+        session.startGame(makeTestMaze());
+        session.movePlayer(Direction::east);
+        session.movePlayer(Direction::east);
+        session.movePlayer(Direction::south);
+
+        Assert::IsTrue(session.movePlayer(Direction::north) == MoveOutcome::noActiveGame,
+                       L"a finished game refuses more steps");
+    }
+
+    TEST_METHOD(aShorterWayGivesMorePoints)
+    {
+        GameStatistics shortRun;
+        shortRun.stepCount = 20;
+        shortRun.collectedCost = 40;
+        shortRun.elapsedSeconds = 30.0;
+
+        GameStatistics longRun = shortRun;
+        longRun.stepCount = 80;
+        longRun.collectedCost = 160;
+
+        Assert::IsTrue(calculateScore(20, 20, shortRun) > calculateScore(20, 20, longRun),
+                       L"fewer steps and less cost give more points");
+    }
+
+    TEST_METHOD(thePointsNeverFallBelowZero)
+    {
+        GameStatistics terribleRun;
+        terribleRun.stepCount = 100000;
+
+        Assert::AreEqual(0, calculateScore(10, 10, terribleRun), L"the points never fall below zero");
+    }
+
+    TEST_METHOD(anOpenedDoorGivesABonus)
+    {
+        GameStatistics runWithoutDoor;
+        runWithoutDoor.stepCount = 20;
+        runWithoutDoor.collectedCost = 40;
+
+        GameStatistics runWithDoor = runWithoutDoor;
+        runWithDoor.keysUsed = 1;
+
+        Assert::IsTrue(calculateScore(20, 20, runWithDoor) > calculateScore(20, 20, runWithoutDoor),
+                       L"an opened door gives a bonus");
+    }
+};
+REGISTER_TEST_CLASS(WinningAndScoreTests);
