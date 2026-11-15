@@ -437,3 +437,41 @@ public:
     }
 };
 REGISTER_TEST_CLASS(HintPathTests);
+
+TEST_CLASS(RestoredRunTests)
+{
+public:
+    TEST_METHOD(anImpossibleSavedPositionFallsBackToTheStart)
+    {
+        GameStatistics savedStatistics;
+        savedStatistics.stepCount = 12;
+
+        GameSession session;
+        session.restoreGame(makeTestMaze(), Position{99, 99}, savedStatistics);
+
+        Assert::IsTrue(session.playerPosition() == Position{0, 0}, L"an impossible position is corrected");
+        Assert::AreEqual(12, session.statistics().stepCount, L"the saved step count is kept");
+    }
+
+    TEST_METHOD(aCorrectSavedPositionIsKept)
+    {
+        GameSession session;
+        session.restoreGame(makeTestMaze(), Position{1, 2}, GameStatistics{});
+
+        Assert::IsTrue(session.playerPosition() == Position{1, 2}, L"a correct saved position is kept");
+    }
+
+    TEST_METHOD(theReportOfACellIsRight)
+    {
+        GameSession session;
+        session.restoreGame(makeTestMaze(), Position{1, 2}, GameStatistics{});
+
+        const CellReport exitReport = session.inspectPlayerCell();
+        Assert::IsTrue(exitReport.position == Position{1, 2}, L"the report describes the asked cell");
+        Assert::AreEqual(0, exitReport.distanceToExit, L"the exit cell is zero steps away");
+
+        const CellReport startReport = session.inspectCell(Position{0, 0});
+        Assert::AreEqual(2, startReport.openSides, L"the start cell of the test maze has two open sides");
+    }
+};
+REGISTER_TEST_CLASS(RestoredRunTests);
